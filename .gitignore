@@ -21,6 +21,9 @@ go.work.sum
 *.sqlite
 *.sqlite3
 
+# Simulator → edge PTY handoff
+.serial_port
+
 # Python
 __pycache__/
 *.py[cod]

@@ -8,12 +8,13 @@ import (
 
 // Config holds cloud ingest/API runtime settings.
 type Config struct {
-	DatabaseURL string   `env:"DATABASE_URL" envDefault:"postgres://telemetry:telemetry@localhost:5433/telemetry?sslmode=disable"`
-	MQTTBroker  string   `env:"MQTT_BROKER" envDefault:"tcp://localhost:1883"`
-	MQTTClientID string  `env:"MQTT_CLIENT_ID" envDefault:"cloud-ingest"`
-	MQTTQoS     byte     `env:"MQTT_QOS" envDefault:"1"`
-	HTTPAddr    string   `env:"HTTP_ADDR" envDefault:":8080"`
-	CORSOrigins []string `env:"CORS_ORIGINS" envDefault:"http://localhost:5173" envSeparator:","`
+	DatabaseURL  string   `env:"DATABASE_URL" envDefault:"postgres://telemetry:telemetry@localhost:5434/telemetry?sslmode=disable"`
+	MQTTBroker   string   `env:"MQTT_BROKER" envDefault:"tcp://localhost:1883"`
+	MQTTClientID string   `env:"MQTT_CLIENT_ID" envDefault:"cloud-ingest"`
+	MQTTQoS      byte     `env:"MQTT_QOS" envDefault:"1"`
+	HTTPAddr     string   `env:"HTTP_ADDR" envDefault:":8080"`
+	// CORSOrigins lists allowed browser origins. Use "*" to allow any localhost / 127.0.0.1 origin (local/dev).
+	CORSOrigins []string `env:"CORS_ORIGINS" envDefault:"*" envSeparator:","`
 }
 
 // Load parses environment variables into Config.

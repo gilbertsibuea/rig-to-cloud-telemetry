@@ -146,7 +146,15 @@ def main() -> None:
 
     console.print("[bold]WITS generator started[/bold] (Ctrl+C to stop)")
     console.print(f"[bold yellow]SERIAL_PORT={port_path}[/bold yellow]")
-    console.print(f"Run edge with: SERIAL_PORT={port_path} make run-edge")
+    console.print("Then run: make run-edge   # auto-reads .serial_port")
+
+    # Persist path so `make run-edge` does not need a manual copy.
+    port_file = os.path.join(os.path.dirname(__file__), "..", ".serial_port")
+    try:
+        with open(port_file, "w", encoding="utf-8") as fh:
+            fh.write(port_path + "\n")
+    except OSError as exc:
+        console.print(f"[yellow]Could not write .serial_port:[/yellow] {exc}")
 
     start = time.monotonic()
     try:
@@ -163,6 +171,10 @@ def main() -> None:
         console.print("\n[yellow]Stopped.[/yellow]")
     finally:
         writer.close()
+        try:
+            os.remove(port_file)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

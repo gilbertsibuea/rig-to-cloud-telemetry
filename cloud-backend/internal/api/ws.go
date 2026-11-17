@@ -34,11 +34,9 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	origin := r.Header.Get("Origin")
-	if origin != "" {
-		if _, ok := s.corsOrigins[origin]; !ok {
-			writeError(w, http.StatusForbidden, "forbidden", "origin not allowed")
-			return
-		}
+	if origin != "" && !s.originAllowed(origin) {
+		writeError(w, http.StatusForbidden, "forbidden", "origin not allowed")
+		return
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)

@@ -3,7 +3,9 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -17,19 +19,53 @@ import (
 
 // Server serves REST and WebSocket APIs.
 type Server struct {
-	store      *store.Store
-	hub        *hub.Hub
-	broker     *broker.Subscriber
-	corsOrigins map[string]struct{}
+	store         *store.Store
+	hub           *hub.Hub
+	broker        *broker.Subscriber
+	corsOrigins   map[string]struct{}
+	corsAllowLocal bool
 }
 
 // NewServer constructs the HTTP API server.
 func NewServer(st *store.Store, h *hub.Hub, sub *broker.Subscriber, corsOrigins []string) *Server {
 	origins := make(map[string]struct{}, len(corsOrigins))
+	allowLocal := false
 	for _, o := range corsOrigins {
+		o = strings.TrimSpace(o)
+		if o == "" {
+			continue
+		}
+		if o == "*" {
+			allowLocal = true
+			continue
+		}
 		origins[o] = struct{}{}
 	}
-	return &Server{store: st, hub: h, broker: sub, corsOrigins: origins}
+	return &Server{
+		store:          st,
+		hub:            h,
+		broker:         sub,
+		corsOrigins:    origins,
+		corsAllowLocal: allowLocal,
+	}
+}
+
+func (s *Server) originAllowed(origin string) bool {
+	if origin == "" {
+		return true
+	}
+	if _, ok := s.corsOrigins[origin]; ok {
+		return true
+	}
+	if !s.corsAllowLocal {
+		return false
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	return host == "localhost" || host == "127.0.0.1"
 }
 
 // Router returns the Chi router.
@@ -52,7 +88,7 @@ func (s *Server) Router() http.Handler {
 func (s *Server) cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if _, ok := s.corsOrigins[origin]; ok {
+		if origin != "" && s.originAllowed(origin) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")

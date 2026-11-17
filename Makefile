@@ -4,6 +4,7 @@ PYTHON ?= python3
 VENV ?= simulator/.venv
 PIP := $(VENV)/bin/pip
 PY := $(VENV)/bin/python
+SERIAL_PORT_FILE := $(CURDIR)/.serial_port
 
 init:
 	@echo "==> Go workspace modules"
@@ -37,8 +38,16 @@ run-sim:
 	cd simulator && $(CURDIR)/$(VENV)/bin/python wits_generator.py
 
 run-edge:
-	@if [ -z "$$SERIAL_PORT" ]; then echo "SERIAL_PORT is required (from make run-sim output)"; exit 1; fi
-	cd edge-daemon && go run ./cmd/daemon
+	@if [ -z "$$SERIAL_PORT" ] && [ -f "$(SERIAL_PORT_FILE)" ]; then \
+		export SERIAL_PORT=$$(tr -d '\n' < "$(SERIAL_PORT_FILE)"); \
+		echo "Using SERIAL_PORT=$$SERIAL_PORT from .serial_port"; \
+		cd edge-daemon && SERIAL_PORT=$$SERIAL_PORT go run ./cmd/daemon; \
+	elif [ -n "$$SERIAL_PORT" ]; then \
+		cd edge-daemon && go run ./cmd/daemon; \
+	else \
+		echo "SERIAL_PORT missing. Start simulator first: make run-sim"; \
+		exit 1; \
+	fi
 
 run-cloud:
 	cd cloud-backend && go run ./cmd/ingest
